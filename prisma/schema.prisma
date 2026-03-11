@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+datasource db {
+  provider = "sqlite"
+  
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  phone         String?
+  avatar        String?
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  travels          Travel[]
+  reservations     Reservation[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  location         Location?
+}
+
+model Travel {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  departureCity   String
+  arrivalCity     String
+  departureDate   DateTime
+  arrivalDate     DateTime
+  availableKg     Float
+  remainingKg     Float
+  pricePerKg      Float
+  description     String?
+  status          String    @default("ACTIVE")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reservations    Reservation[]
+  messages        Message[]
+}
+
+model Reservation {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  travelId    String
+  travel      Travel    @relation(fields: [travelId], references: [id])
+  kg          Float
+  totalPrice  Float
+  status      String    @default("PENDING")
+  code        String    @unique
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  payment     Payment?
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  reservationId String      @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  amount        Float
+  status        String      @default("PENDING")
+  method        String      @default("CARD")
+  transactionId String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  travelId   String?
+  travel     Travel?  @relation(fields: [travelId], references: [id])
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  lat       Float
+  lng       Float
+  city      String?
+  updatedAt DateTime @updatedAt
+}
